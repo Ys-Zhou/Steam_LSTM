@@ -12,15 +12,17 @@ batch_size = 20
 X = tf.placeholder(tf.float32, shape=[None, time_step, input_size])
 Y = tf.placeholder(tf.float32, shape=[None, time_step, output_size])
 
-# Data
-data = [[0.5 for a in range(b, b + 5)] for b in range(101)]
 
-train_x, train_y = [], []
-for i in range(len(data) - time_step - 1):
-    x = data[i:i + time_step]
-    y = data[i + 1:i + time_step + 1]
-    train_x.append(x)
-    train_y.append(y)
+def get_data():
+    data = [[0.5 for x in range(y, y + 5)] for y in range(101)]
+
+    train_x, train_y = [], []
+    for i in range(len(data) - time_step - 1):
+        x = data[i:i + time_step]
+        y = data[i + 1:i + time_step + 1]
+        train_x.append(x)
+        train_y.append(y)
+    return train_x, train_y
 
 
 def lstm():
@@ -49,24 +51,26 @@ def lstm():
 
 
 def train():
+    train_x, train_y = get_data()
     pred, _ = lstm()
     # loss function
     loss = tf.reduce_mean(tf.square(tf.reshape(pred, [-1]) - tf.reshape(Y, [-1])))
     train_op = tf.train.AdamOptimizer(lr).minimize(loss)
-    # saver = tf.train.Saver(tf.global_variables())
+    # Save model
+    saver = tf.train.Saver(tf.global_variables())
     # module_file = tf.train.latest_checkpoint()
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         # saver.restore(sess, module_file)
         # Training times
-        for i in range(1000):
-            start = 0
-            end = batch_size
-            while end < len(train_x):
-                _, loss_ = sess.run([train_op, loss], feed_dict={X: train_x[start:end], Y: train_y[start:end]})
-                start += batch_size
-                end += batch_size
-                print(i, loss_)
+        for turn in range(1000):
+            loss_ = None
+            for start in range(0, len(train_x) - batch_size, batch_size):
+                _, loss_ = sess.run([train_op, loss], feed_dict={X: train_x[start:start + batch_size],
+                                                                 Y: train_y[start:start + batch_size]})
+            print(turn, loss_)
+            if turn % 10 == 0:
+                saver.save(sess, 'steam_lstm_8.model', global_step=turn)
 
 
 if __name__ == '__main__':
