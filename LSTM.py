@@ -75,6 +75,7 @@ def get_test():
         cur.execute(query)
         user_list = cur.fetchall()
 
+        # Prepare testing data
         test_x = []
         test_y = []
         known = []
@@ -97,7 +98,6 @@ def get_test():
                         col.append(game_index)
                         data.append(float(ratings[ts_index]))
             rating_mtx = scipy.sparse.coo_matrix((data, (row, col)), shape=(length_ts, input_size)).toarray()
-
             test_x.append(rating_mtx[length_ts - time_step:length_ts])
 
             query = 'SELECT gameid FROM date170709 WHERE userid = \'%s\'' % user[0]
@@ -222,6 +222,6 @@ def prediction():
 
 
 if __name__ == '__main__':
-    train()
+    # train()
     # prediction()
     pass
