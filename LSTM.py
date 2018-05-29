@@ -3,22 +3,21 @@ import scipy.sparse
 from time import time
 from DBConnector import GetCursor
 
-# Constant
-hidden_unit = 256  # hidden layer units
+# LSTM constants
+hidden_unit = 256
 input_size = 7649
 output_size = 7649
+
+# Training parameters
 lr = 0.0005  # Learning rate
 ls = 100  # Learning step
-
-# LSTM parameters
 time_step = 8
 batch_size = 100
 X = tf.placeholder(tf.float32, shape=[None, time_step, input_size])
 Y = tf.placeholder(tf.float32, shape=[None, time_step, output_size])
 
-# Other params
-# Time series length
-length_ts = 12
+# Other parameters
+length_ts = 12  # Time series length
 user_limit = 2000
 
 
@@ -110,7 +109,7 @@ def get_test():
     return game_list, test_x, test_y, known
 
 
-# Use tensorboard to summery variables
+# Summery variables
 def variable_summaries(var):
     with tf.name_scope('summaries'):
         # Record mean (avg)
