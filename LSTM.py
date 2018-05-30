@@ -5,14 +5,15 @@ from DBConnector import GetCursor
 
 # LSTM constants
 hidden_unit = 256
-input_size = 7649
-output_size = 7649
+data_size = 7649
+embedding_size = 64
+input_size = output_size = embedding_size
 
 # Training parameters
 lr = 0.0005  # Learning rate
 ls = 100  # Learning step
 time_step = 8
-batch_size = 100
+batch_size = 128
 X = tf.placeholder(tf.float32, shape=[None, time_step, input_size])
 Y = tf.placeholder(tf.float32, shape=[None, time_step, output_size])
 
@@ -127,35 +128,37 @@ def variable_summaries(var):
 
 
 def lstm(batch: int):
+    with tf.name_scope('embedding_layer'):
+        pass
+    # embedding = tf.Variable(tf.random_uniform([data_size, embedding_size], -1.0, 1.0))
+    # embed = tf.nn.embedding_lookup(embedding, X)
     with tf.name_scope('input_layer'):
         with tf.name_scope('input_weights'):
             w_in = tf.Variable(tf.random_normal([input_size, hidden_unit]))
         with tf.name_scope('input_biases'):
             b_in = tf.Variable(tf.constant(0.1, shape=[hidden_unit, ]))
         with tf.name_scope('input'):
-            # Change tensor to 2-dimension
-            # Results are input to hidden layer
+            # Reshape tensor to 2-dimension for matrix multiplication
             input_ = tf.reshape(X, [-1, input_size])
             input_rnn = tf.matmul(input_, w_in) + b_in
-            # Change tensor to 3-dimension
-            # Results are input to to LSTM cells
+            # Reshape tensor back to 3-dimension
             input_rnn = tf.reshape(input_rnn, [-1, time_step, hidden_unit])
     with tf.name_scope('cell'):
         cell = tf.nn.rnn_cell.BasicLSTMCell(hidden_unit)
         init_state = cell.zero_state(batch, dtype=tf.float32)
         # output_rnn: results of every LSTM cells
-        # states: result of the last LSTM cell
+        # states: states in the last LSTM cell
         output_rnn, states = tf.nn.dynamic_rnn(cell, input_rnn, initial_state=init_state, dtype=tf.float32)
-        # Input to output layer
-        output = tf.reshape(output_rnn, [-1, hidden_unit])
     with tf.name_scope('output_layer'):
+        # Reshape tensor to 2-dimension for matrix multiplication
+        output = tf.reshape(output_rnn, [-1, hidden_unit])
         with tf.name_scope('output_weights'):
             w_out = tf.Variable(tf.random_normal([hidden_unit, output_size]))
             variable_summaries(w_out)
         with tf.name_scope('output_biases'):
             b_out = tf.Variable(tf.constant(0.1, shape=[output_size, ]))
             variable_summaries(b_out)
-        with tf.name_scope('output'):
+        with tf.name_scope('prediction'):
             pred = tf.matmul(output, w_out) + b_out
             variable_summaries(pred)
     return pred, states
