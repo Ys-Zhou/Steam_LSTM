@@ -2,7 +2,7 @@ import scipy.sparse
 from DBConnector import GetCursor
 
 
-class Data:
+class DataSet:
     def __init__(self, time_step: int, user_limit: int):
         with GetCursor() as cur:
             # Get game list
@@ -22,12 +22,12 @@ class Data:
     # Prepare training data
     def get_data(self):
         with GetCursor() as cur:
-
-            ts_count = None
             train_x = []
             train_y = []
 
             for user in self.user_list:
+                ts_count = None
+
                 query = 'SELECT gameid, ratings FROM ts_train_data WHERE userid = \'%s\'' % user[0]
                 cur.execute(query)
 
@@ -50,18 +50,18 @@ class Data:
                     train_x.append(rating_mtx[i:self.time_step + i])
                     train_y.append(rating_mtx[i + 1:self.time_step + i + 1])
 
-        return ts_count, self.game_count, train_x, train_y
+        return train_x, train_y
 
     # Prepare testing data
     def get_test(self):
         with GetCursor() as cur:
-
-            ts_count = None
             test_x = []
             test_y = []
-            known_list = []
+            known = []
 
             for user in self.user_list:
+                ts_count = None
+
                 query = 'SELECT gameid, ratings FROM ts_train_data WHERE userid = \'%s\'' % user[0]
                 cur.execute(query)
 
@@ -76,9 +76,6 @@ class Data:
                             sparse_matrix[1].append(self.game_dict[rating[0]])
                             sparse_matrix[2].append(float(ratings[i]))
 
-                # Known games for the user
-                known_list.append(sparse_matrix[1])
-
                 # Convert to dense matrix
                 rating_mtx = scipy.sparse.coo_matrix((sparse_matrix[2], sparse_matrix[0:2]),
                                                      shape=(ts_count, self.game_count)).toarray()
@@ -86,9 +83,12 @@ class Data:
 
                 query = 'SELECT gameid FROM date170709 WHERE userid = \'%s\'' % user[0]
                 cur.execute(query)
-                test_list = cur.fetchall()
-                if test_list:
-                    test_list = list(map(list, zip(*test_list)))[0]
+                test_list = []
+                for row in cur:
+                    if row[0] in self.game_dict:
+                        test_list.append(self.game_dict[row[0]])
                 test_y.append(test_list)
 
-        return ts_count, self.game_count, test_x, test_y, known_list
+                known.append(sparse_matrix[1])
+
+        return test_x, test_y, known
