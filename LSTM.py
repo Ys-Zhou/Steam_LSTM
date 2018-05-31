@@ -1,18 +1,16 @@
 import tensorflow as tf
-import scipy.sparse
 from time import time
 from dataset import DataSet
-from DBConnector import GetCursor
 
 # LSTM constants
 hidden_unit = 16
 input_size = output_size = 7649
+time_step = 8
 
 # Training parameters
 lr = 0.0005  # Learning rate
 max_ls = 200  # Max learning step
 end_cnd = 0.999  # End condition (RMSE)
-time_step = 8
 batch_size = 128
 X = tf.placeholder(tf.float32, shape=[None, time_step, input_size])
 Y = tf.placeholder(tf.float32, shape=[None, time_step, output_size])
