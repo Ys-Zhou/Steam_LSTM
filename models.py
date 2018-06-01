@@ -26,9 +26,9 @@ class Models:
         with tf.name_scope('lstm units'):
             cell = tf.nn.rnn_cell.BasicLSTMCell(hidden_unit)
             init_state = cell.zero_state(batch_size, dtype=tf.float32)
-            # output_rnn: results of every LSTM cells
-            # final_states: states in the last LSTM cell
-            output_rnn, final_states = tf.nn.dynamic_rnn(cell, input_rnn, initial_state=init_state, dtype=tf.float32)
+            # output_rnn: results in each step
+            # last_states: final states
+            output_rnn, last_states = tf.nn.dynamic_rnn(cell, input_rnn, initial_state=init_state, dtype=tf.float32)
         with tf.name_scope('output layer'):
             with tf.name_scope('weights'):
                 w_out = tf.Variable(tf.random_normal([hidden_unit, output_size]))
@@ -41,4 +41,9 @@ class Models:
                 output_rnn = tf.reshape(output_rnn, [-1, hidden_unit])
                 # (b * s, h) => (b * s, out)
                 output_y = tf.matmul(output_rnn, w_out) + b_out
-        return output_y, final_states
+        return output_y
+
+    @staticmethod
+    def codec():
+        with tf.name_scope('input'):
+            input_x = tf.placeholder(tf.float32, shape=[None, time_step, input_size])
