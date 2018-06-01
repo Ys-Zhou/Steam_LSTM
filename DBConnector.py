@@ -1,7 +1,7 @@
 import mysql.connector.pooling
 
 
-# Singleton pattern decorator
+# singleton pattern decorator
 def singleton(cls, *args, **kw):
     instance = {}
 
