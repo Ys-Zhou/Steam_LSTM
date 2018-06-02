@@ -1,4 +1,5 @@
 import tensorflow as tf
+import os
 from dataset import DataSet
 from models import Models
 
@@ -67,4 +68,8 @@ def train(hidden_unit: int):
 
 
 if __name__ == '__main__':
-    train(256)
+    try:
+        train(256)
+    finally:
+        # os.system('shutdown /s /t 60')
+        pass

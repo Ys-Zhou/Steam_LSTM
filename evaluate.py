@@ -21,7 +21,10 @@ def evaluate(hidden_unit: int):
 
     hits = 0
     crrs = 0
-    with tf.Session() as sess:
+
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    with tf.Session(config=config) as sess:
         module_file = tf.train.latest_checkpoint('models/NoSVD_%d/' % hidden_unit)
         saver.restore(sess, module_file)
 
@@ -44,4 +47,4 @@ def evaluate(hidden_unit: int):
 
 
 if __name__ == '__main__':
-    evaluate(128)
+    evaluate(256)
