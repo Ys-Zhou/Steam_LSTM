@@ -11,7 +11,7 @@ user_limit = 2000
 
 
 # By Recall(Top-50)
-def evaluate(hidden_unit: int):
+def lstm_evaluate(hidden_unit: int):
     x = tf.placeholder(tf.float32, shape=[None, time_step, input_size])
     test_x, test_y, known = DataSet(user_limit, time_step).lstm_test()
 
@@ -47,4 +47,4 @@ def evaluate(hidden_unit: int):
 
 
 if __name__ == '__main__':
-    evaluate(256)
+    lstm_evaluate(256)
