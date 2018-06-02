@@ -15,7 +15,7 @@ def singleton(cls, *args, **kw):
 
 # Get database connection pool
 @singleton
-class _DBConnector:
+class _DbConnector:
 
     def __init__(self):
         cnf = {
@@ -38,7 +38,7 @@ class _DBConnector:
 class GetCursor:
 
     def __enter__(self):
-        self.__cnx = _DBConnector().get_connection_pool().get_connection()
+        self.__cnx = _DbConnector().get_connection_pool().get_connection()
         self.__cur = self.__cnx.cursor(buffered=True)
         return self.__cur
 

@@ -1,5 +1,5 @@
 import scipy.sparse
-from DBConnector import GetCursor
+from dbconnector import GetCursor
 
 
 class DataSet:

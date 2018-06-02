@@ -1,18 +1,16 @@
-# -*- coding: utf-8 -*-
-from DBConnector import GetCursor
-
-k = 12  # 目标列数
+from dbconnector import GetCursor
 
 
-def listadd(list_a, list_b):
-    return [x + y for x, y in zip(list_a, list_b)]
+def listadd(a: list, b: list):
+    return [x + y for x, y in zip(a, b)]
 
 
-def listpro(list_, pro):
-    return [x * pro for x in list_]
+def listpro(a: list, pro: float):
+    return [x * pro for x in a]
 
 
-def avg(uname):
+# Equal Ratio Filling
+def erf(uname: str, k: int):
     with GetCursor() as cur:
         query = 'SELECT gameid, d1, d2, d3, d4, d5, d6 FROM raw_train_data WHERE userid = \'%s\'' % uname
         cur.execute(query)
@@ -22,13 +20,13 @@ def avg(uname):
         all_ = 0
         for line in table[1:]:
             all_ += sum(line)
-        group_time = float(all_) / k
+        group_time = all_ / k
 
         remind = [0] * lent
         aim = []
         for line in table[1:]:
             new = line
-            while sum(remind) + sum(new) > group_time * 0.99999:
+            while sum(remind) + sum(new) > group_time * 0.999999:
                 proportion = (group_time - sum(remind)) / sum(new)
                 res_list = listadd(remind, listpro(new, proportion))
                 rate_list = listpro(res_list, 1 / group_time)
@@ -38,9 +36,9 @@ def avg(uname):
             remind = listadd(remind, new)
         rating_list = list(map(list, zip(*aim)))
 
+        insert = 'INSERT INTO ts_train_data VALUES (%s, %s, %s)'
         for i in range(lent):
             ratings = ' '.join(map(lambda x: str(round(x, 3)), rating_list[i]))
-            insert = 'INSERT INTO ts_train_data VALUES (%s, %s, %s)'
             cur.execute(insert, (uname, table[0][i], ratings))
 
 
@@ -50,6 +48,6 @@ if __name__ == '__main__':
         cur_.execute(query_)
         count = 1
         for row in cur_:
-            avg(row[0])
+            erf(row[0], 12)
             print(count, row[0])
             count += 1
