@@ -80,8 +80,7 @@ class DataSet:
 
         return test_x, test_y, known
 
-    # Prepare testing data for codec
-    def codec_train(self):
+    def all_data(self):
         train = []
 
         for user in self.__user_list:
