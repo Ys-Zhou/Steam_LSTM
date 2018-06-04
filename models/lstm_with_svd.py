@@ -1,5 +1,6 @@
 import tensorflow as tf
 from dataset import DataSet
+import os
 
 
 class LstmWithSvd:
@@ -21,7 +22,7 @@ class LstmWithSvd:
             # (b, s, i) => (b* s, i)
             x = tf.reshape(self.x, [-1, input_size])
             # (b* s, i) => (b* s, m)
-            input_map = tf.matmul(x, tf.transpose(map_mtx))
+            input_map = x @ tf.transpose(map_mtx)
         with tf.name_scope('input_layer'):
             with tf.name_scope('weights'):
                 w_in = tf.Variable(tf.random_normal([map_size, hidden_unit]))
@@ -32,7 +33,7 @@ class LstmWithSvd:
             with tf.name_scope('full_connection'):
                 # linear map
                 # (b* s, m) => (b* s, h)
-                input_rnn = tf.matmul(input_map, w_in) + b_in
+                input_rnn = input_map @ w_in + b_in
                 # Reshape tensor back to 3-dimension
                 # (b* s, h) => (b, s, h)
                 input_rnn = tf.reshape(input_rnn, [-1, time_step, hidden_unit])
@@ -53,10 +54,10 @@ class LstmWithSvd:
                 # (b, s, h) => (b* s, h)
                 output_rnn = tf.reshape(output_rnn, [-1, hidden_unit])
                 # (b* s, h) => (b* s, m)
-                output_map = tf.matmul(output_rnn, w_out) + b_out
+                output_map = output_rnn @ w_out + b_out
         with tf.name_scope('output_mapping'):
             # (b* s, m) => (b* s, o)
-            output_ = tf.matmul(output_map, map_mtx)
+            output_ = output_map @ map_mtx
             # (b* s, o) => (b, s, o)
             output_ = tf.reshape(output_, [-1, time_step, output_size])
         with tf.name_scope('softmax'):
@@ -68,10 +69,10 @@ class LstmWithSvd:
 
         # error and optimize function
         with tf.name_scope('train'):
-            error = tf.reduce_mean(tf.abs(tf.subtract(self.prd, self.y)))
+            error = tf.reduce_mean(tf.abs(self.prd - self.y))
             tf.summary.scalar('error', error)
             # Dynamic learning rate
-            global_step = tf.placeholder(tf.int8)
+            global_step = tf.placeholder(tf.int16)
             learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, training_steps, decay_rate)
             tf.summary.scalar('learning_rate', learning_rate)
             update_op = tf.train.AdamOptimizer(learning_rate).minimize(error)
@@ -162,8 +163,12 @@ class LstmWithSvd:
 
 
 if __name__ == '__main__':
-    model = LstmWithSvd(input_size=7649, map_size=128, hidden_unit=128, output_size=7649, time_step=8, batch_size=128)
-    model.train(user_limit=2000, start_learning_rate=0.001, training_steps=10, decay_rate=0.05)
+    try:
+        model = LstmWithSvd(input_size=7649, map_size=256, hidden_unit=128, output_size=7649, time_step=8,
+                            batch_size=128)
+        model.train(user_limit=2000, start_learning_rate=0.001, training_steps=1000, decay_rate=0.05)
 
-    # model = LstmWithSvd(input_size=7649, hidden_unit=256, output_size=7649, time_step=8)
-    # model.evaluate(user_limit=2000)
+        # model = LstmWithSvd(input_size=7649, hidden_unit=256, output_size=7649, time_step=8)
+        # model.evaluate(user_limit=2000)
+    finally:
+        os.system('shutdown /s /t 60')

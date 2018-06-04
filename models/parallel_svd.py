@@ -17,7 +17,7 @@ class PrlSVD:
             user_mtx = tf.Variable(tf.random_normal([time_step, user_size, hidden_size]))
         with tf.name_scope('like_svd'):
             user_mtx = tf.reshape(user_mtx, [-1, hidden_size])
-            output = tf.matmul(user_mtx, item_mtx)
+            output = user_mtx @ item_mtx
             output = tf.reshape(output, [-1, user_size, item_size])
             self.output = tf.transpose(output, perm=[1, 0, 2])
 
@@ -27,10 +27,10 @@ class PrlSVD:
 
         # error and optimize function
         with tf.name_scope('train'):
-            error = tf.reduce_mean(tf.abs(tf.subtract(self.output, self.y)))
+            error = tf.reduce_mean(tf.abs(self.output - self.y))
             tf.summary.scalar('error', error)
             # Dynamic learning rate
-            global_step = tf.placeholder(tf.int8)
+            global_step = tf.placeholder(tf.int16)
             learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, training_steps, decay_rate)
             tf.summary.scalar('learning_rate', learning_rate)
             update_op = tf.train.AdamOptimizer(learning_rate).minimize(error)
@@ -62,5 +62,5 @@ class PrlSVD:
 
 
 if __name__ == '__main__':
-    model = PrlSVD(item_size=7649, user_size=2000, hidden_size=128, time_step=12)
-    model.train(start_learning_rate=0.1, decay_rate=0.01, training_steps=200)
+    model = PrlSVD(item_size=7649, user_size=2000, hidden_size=256, time_step=12)
+    model.train(start_learning_rate=0.1, decay_rate=0.001, training_steps=1000)

@@ -25,7 +25,7 @@ class Lstm:
                 input_ = tf.reshape(self.x, [-1, input_size])
                 # linear map
                 # (b* s, i) => (b* s, h)
-                input_rnn = tf.matmul(input_, w_in) + b_in
+                input_rnn = input_ @ w_in + b_in
                 # Reshape tensor back to 3-dimension
                 # (b* s, h) => (b, s, h)
                 input_rnn = tf.reshape(input_rnn, [-1, time_step, hidden_unit])
@@ -46,7 +46,7 @@ class Lstm:
                 # (b, s, h) => (b* s, h)
                 output_rnn = tf.reshape(output_rnn, [-1, hidden_unit])
                 # (b* s, h) => (b* s, o)
-                output_ = tf.matmul(output_rnn, w_out) + b_out
+                output_ = output_rnn @ w_out + b_out
         with tf.name_scope('softmax'):
             prd = tf.nn.softmax(output_)
             # (b * s, out) => (b, s, out)
@@ -58,10 +58,10 @@ class Lstm:
 
         # error and optimize function
         with tf.name_scope('train'):
-            error = tf.reduce_mean(tf.abs(tf.subtract(self.prd, self.y)))
+            error = tf.reduce_mean(tf.abs(self.prd - self.y))
             tf.summary.scalar('error', error)
             # Dynamic learning rate
-            global_step = tf.placeholder(tf.int8)
+            global_step = tf.placeholder(tf.int16)
             learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, training_steps, decay_rate)
             tf.summary.scalar('learning_rate', learning_rate)
             update_op = tf.train.AdamOptimizer(learning_rate).minimize(error)

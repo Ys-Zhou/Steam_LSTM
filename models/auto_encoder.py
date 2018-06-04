@@ -33,10 +33,10 @@ class AutoEncoder:
 
         # error and optimize function
         with tf.name_scope('train'):
-            error = tf.reduce_mean(tf.abs(tf.subtract(self.output, self.y)))
+            error = tf.reduce_mean(tf.abs(self.output - self.y))
             tf.summary.scalar('error', error)
             # Dynamic learning rate
-            global_step = tf.placeholder(tf.int8)
+            global_step = tf.placeholder(tf.int16)
             learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, training_steps, decay_rate)
             tf.summary.scalar('learning_rate', learning_rate)
             update_op = tf.train.AdamOptimizer(learning_rate).minimize(error)
