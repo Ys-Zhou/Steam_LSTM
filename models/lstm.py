@@ -2,7 +2,7 @@ import tensorflow as tf
 from dataset import DataSet
 
 
-class LSTM:
+class Lstm:
 
     def __init__(self, input_size: int, hidden_unit: int, output_size: int, time_step: int, batch_size: int = 1):
         self.time_step = time_step
@@ -61,7 +61,7 @@ class LSTM:
             error = tf.reduce_mean(tf.abs(tf.subtract(self.prd, self.y)))
             tf.summary.scalar('error', error)
             # Dynamic learning rate
-            global_step = tf.Variable(0, trainable=False)
+            global_step = tf.placeholder(tf.int8)
             learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, training_steps, decay_rate)
             tf.summary.scalar('learning_rate', learning_rate)
             update_op = tf.train.AdamOptimizer(learning_rate).minimize(error)
@@ -108,8 +108,7 @@ class LSTM:
                     summary = sess.run(merged, feed_dict=feed_dict)
                     summary_writer.add_summary(summary, global_step=curr_step)
 
-                    print('Step %d: current error = %g, current learning rate = %g' % (
-                        curr_step, err_sum / turns, curr_lr))
+                    print('Step %d: error = %g, learning rate = %g' % (curr_step, err_sum / turns, curr_lr))
                     err_sum = 0
                     turns = 0
 
@@ -149,8 +148,8 @@ class LSTM:
 
 
 if __name__ == '__main__':
-    # network = LSTM(input_size=7649, hidden_unit=256, output_size=7649, time_step=8, batch_size=128)
-    # network.train(user_limit=2000, start_learning_rate=0.001, training_steps=500, decay_rate=0.05)
+    # model = Lstm(input_size=7649, hidden_unit=256, output_size=7649, time_step=8, batch_size=128)
+    # model.train(user_limit=2000, start_learning_rate=0.001, training_steps=500, decay_rate=0.05)
 
-    network = LSTM(input_size=7649, hidden_unit=256, output_size=7649, time_step=8)
-    network.evaluate(user_limit=2000)
+    model = Lstm(input_size=7649, hidden_unit=256, output_size=7649, time_step=8)
+    model.evaluate(user_limit=2000)

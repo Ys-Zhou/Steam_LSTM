@@ -36,7 +36,7 @@ class AutoEncoder:
             error = tf.reduce_mean(tf.abs(tf.subtract(self.output, self.y)))
             tf.summary.scalar('error', error)
             # Dynamic learning rate
-            global_step = tf.Variable(0, trainable=False)
+            global_step = tf.placeholder(tf.int8)
             learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, training_steps, decay_rate)
             tf.summary.scalar('learning_rate', learning_rate)
             update_op = tf.train.AdamOptimizer(learning_rate).minimize(error)
@@ -67,8 +67,7 @@ class AutoEncoder:
                     summary = sess.run(merged, feed_dict=feed_dict)
                     summary_writer.add_summary(summary, global_step=turn)
 
-                    print('Step %d: current error = %g, current learning rate = %g' % (
-                        turn, err_sum / len(train), curr_lr))
+                    print('Step %d: error = %g, learning rate = %g' % (turn, err_sum / len(train), curr_lr))
 
                 # Save model
                 saver = tf.train.Saver()
@@ -76,5 +75,5 @@ class AutoEncoder:
 
 
 if __name__ == '__main__':
-    network = AutoEncoder(input_size=7649, hidden_unit=128, output_size=7649)
-    network.train(user_limit=2000, start_learning_rate=0.001, decay_rate=0.3, training_steps=100)
+    model = AutoEncoder(input_size=7649, hidden_unit=128, output_size=7649)
+    model.train(user_limit=2000, start_learning_rate=0.001, decay_rate=0.3, training_steps=100)
