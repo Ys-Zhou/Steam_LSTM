@@ -19,9 +19,7 @@ class LstmWithSvd:
             map_mtx = tf.Variable(tf.constant(0.0, shape=[map_size, input_size]), trainable=False)
             self.map_saver = tf.train.Saver({'map_mtx': map_mtx})
             # Reshape tensor to 2-dimension for matrix multiplication
-            # (b, s, i) => (b* s, i)
             x = tf.reshape(self.x, [-1, input_size])
-            # (b* s, i) => (b* s, m)
             input_map = x @ tf.transpose(map_mtx)
         with tf.name_scope('input_layer'):
             with tf.name_scope('weights'):
@@ -30,12 +28,10 @@ class LstmWithSvd:
             with tf.name_scope('biases'):
                 b_in = tf.Variable(tf.constant(0.1, shape=[hidden_unit, ]))
                 tf.summary.histogram('biases', b_in)
+            # linear map
             with tf.name_scope('full_connection'):
-                # linear map
-                # (b* s, m) => (b* s, h)
                 input_rnn = input_map @ w_in + b_in
                 # Reshape tensor back to 3-dimension
-                # (b* s, h) => (b, s, h)
                 input_rnn = tf.reshape(input_rnn, [-1, time_step, hidden_unit])
         with tf.name_scope('lstm_units'):
             cell = tf.nn.rnn_cell.BasicLSTMCell(hidden_unit)
@@ -51,14 +47,10 @@ class LstmWithSvd:
                 b_out = tf.Variable(tf.constant(0.1, shape=[map_size, ]))
                 tf.summary.histogram('biases', b_out)
             with tf.name_scope('full_connection'):
-                # (b, s, h) => (b* s, h)
                 output_rnn = tf.reshape(output_rnn, [-1, hidden_unit])
-                # (b* s, h) => (b* s, m)
                 output_map = output_rnn @ w_out + b_out
         with tf.name_scope('output_mapping'):
-            # (b* s, m) => (b* s, o)
             output_ = output_map @ map_mtx
-            # (b* s, o) => (b, s, o)
             output_ = tf.reshape(output_, [-1, time_step, output_size])
         with tf.name_scope('softmax'):
             self.prd = tf.nn.softmax(output_)
