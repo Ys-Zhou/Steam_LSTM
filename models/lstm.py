@@ -1,5 +1,6 @@
 import tensorflow as tf
 from dataset import DataSet
+import os
 
 
 class Lstm:
@@ -9,8 +10,8 @@ class Lstm:
         self.hidden_unit = hidden_unit
         self.batch_size = batch_size
 
-        self.x = tf.placeholder(tf.float32, shape=[batch_size, time_step, input_size])
-        self.y = tf.placeholder(tf.float32, shape=[batch_size, time_step, output_size])
+        self.x = tf.placeholder(tf.float32, shape=[batch_size, time_step, input_size], name='input_data')
+        self.y = tf.placeholder(tf.float32, shape=[batch_size, time_step, output_size], name='train_data')
 
         with tf.name_scope('input_layer'):
             with tf.name_scope('weights'):
@@ -61,7 +62,7 @@ class Lstm:
             error = tf.reduce_mean(tf.abs(self.prd - self.y))
             tf.summary.scalar('error', error)
             # Dynamic learning rate
-            global_step = tf.placeholder(tf.int16)
+            global_step = tf.placeholder(tf.int16, name='global_step')
             learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, training_steps, decay_rate)
             tf.summary.scalar('learning_rate', learning_rate)
             update_op = tf.train.AdamOptimizer(learning_rate).minimize(error)
@@ -100,12 +101,12 @@ class Lstm:
                         self.y: train_y[start % data_len:] + train_y[:end % data_len],
                         global_step: curr_step
                     }
-                    _, curr_err, curr_lr = sess.run([update_op, error, learning_rate], feed_dict=feed_dict)
+                    _, curr_err, curr_lr, summary = sess.run([update_op, error, learning_rate, merged],
+                                                             feed_dict=feed_dict)
                     err_sum += curr_err
                     turns += 1
 
                     # Write summaries
-                    summary = sess.run(merged, feed_dict=feed_dict)
                     summary_writer.add_summary(summary, global_step=curr_step)
 
                     print('Step %d: error = %g, learning rate = %g' % (curr_step, err_sum / turns, curr_lr))
@@ -117,7 +118,9 @@ class Lstm:
             saver.save(sess, 'saved_models/LSTM_%d/model' % self.hidden_unit, global_step=training_steps)
 
     def evaluate(self, user_limit):
-        test_x, test_y, known = DataSet(user_limit, self.time_step).lstm_test()
+        dataset = DataSet(user_limit, self.time_step)
+        test_x = dataset.lstm_test()
+        test_y, known = dataset.correct_data()
 
         hits = 0
         crrs = 0
@@ -134,7 +137,7 @@ class Lstm:
 
                 priority = [[i, p] for p, i in enumerate(next_[0][-1])]
                 priority.sort(reverse=True)
-                priority = list(map(list, zip(*priority)))[1]
+                priority = list(zip(*priority))[1]
 
                 rec = [g for g in priority if g not in known[i]][:50]
                 crr = [h for h in test_y[i] if h not in known[i]]
@@ -142,14 +145,18 @@ class Lstm:
                 hits += len(set(rec).intersection(set(crr)))
                 crrs += len(crr)
 
-                print('[hits, corrs] = [%d, %d]' % (hits, crrs))
+                print('[hits, corrs] : [%d, %d]' % (hits, crrs))
 
         print('recall = %g' % (hits / crrs))
 
 
 if __name__ == '__main__':
-    # model = Lstm(input_size=7649, hidden_unit=256, output_size=7649, time_step=8, batch_size=128)
-    # model.train(user_limit=2000, start_learning_rate=0.001, training_steps=500, decay_rate=0.05)
+    try:
+        # model = Lstm(input_size=7649, hidden_unit=256, output_size=7649, time_step=8, batch_size=128)
+        # model.train(user_limit=2000, start_learning_rate=0.01, training_steps=1000, decay_rate=0.005)
 
-    model = Lstm(input_size=7649, hidden_unit=256, output_size=7649, time_step=8)
-    model.evaluate(user_limit=2000)
+        model = Lstm(input_size=7649, hidden_unit=256, output_size=7649, time_step=8)
+        model.evaluate(user_limit=2000)
+    finally:
+        # os.system('shutdown /s /t 60')
+        pass

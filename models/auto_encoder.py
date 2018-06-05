@@ -7,8 +7,8 @@ class AutoEncoder:
     def __init__(self, input_size: int, hidden_unit: int, output_size: int):
         self.hidden_unit = hidden_unit
 
-        self.x = tf.placeholder(tf.float32, shape=[None, input_size])
-        self.y = tf.placeholder(tf.float32, shape=[None, output_size])
+        self.x = tf.placeholder(tf.float32, shape=[None, input_size], name='input_data')
+        self.y = tf.placeholder(tf.float32, shape=[None, output_size], name='train_data')
 
         with tf.name_scope('encode_layer'):
             with tf.name_scope('weights'):
@@ -36,7 +36,7 @@ class AutoEncoder:
             error = tf.reduce_mean(tf.abs(self.output - self.y))
             tf.summary.scalar('error', error)
             # Dynamic learning rate
-            global_step = tf.placeholder(tf.int16)
+            global_step = tf.placeholder(tf.int16, name='global_step')
             learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, training_steps, decay_rate)
             tf.summary.scalar('learning_rate', learning_rate)
             update_op = tf.train.AdamOptimizer(learning_rate).minimize(error)

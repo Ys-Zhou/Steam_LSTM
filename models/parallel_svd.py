@@ -8,7 +8,8 @@ class PrlSVD:
         self.user_size = user_size
         self.hidden_size = hidden_size
 
-        self.y = tf.placeholder(tf.float32, shape=[user_size, time_step, item_size])
+        self.y = tf.placeholder(tf.float32, shape=[user_size, time_step, item_size], name='train_data')
+        self.sign = tf.placeholder(tf.float32, shape=[user_size, time_step, item_size], name='sign_data')
 
         with tf.name_scope('item_matrix'):
             item_mtx = tf.Variable(tf.random_normal([hidden_size, item_size]))
@@ -23,14 +24,15 @@ class PrlSVD:
 
     def train(self, start_learning_rate: float, training_steps: int, decay_rate: float):
         # data set
-        train_data = DataSet(self.user_size).all_data()
+        train_data, train_sign = DataSet(self.user_size).all_data()
 
         # error and optimize function
         with tf.name_scope('train'):
-            error = tf.reduce_mean(tf.abs(self.output - self.y))
+            # Use sign data to ignore 0 in train data
+            error = tf.reduce_mean(tf.abs(self.output * self.sign - self.y))
             tf.summary.scalar('error', error)
             # Dynamic learning rate
-            global_step = tf.placeholder(tf.int16)
+            global_step = tf.placeholder(tf.int16, name='global_step')
             learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, training_steps, decay_rate)
             tf.summary.scalar('learning_rate', learning_rate)
             update_op = tf.train.AdamOptimizer(learning_rate).minimize(error)
@@ -48,11 +50,10 @@ class PrlSVD:
 
             # Start learning
             for turn in range(training_steps):
-                feed_dict = {self.y: train_data, global_step: turn}
-                _, curr_err, curr_lr = sess.run([update_op, error, learning_rate], feed_dict=feed_dict)
+                feed_dict = {self.y: train_data, self.sign: train_sign, global_step: turn}
+                _, curr_err, curr_lr, summary = sess.run([update_op, error, learning_rate, merged], feed_dict=feed_dict)
 
                 # Write summaries
-                summary = sess.run(merged, feed_dict=feed_dict)
                 summary_writer.add_summary(summary, global_step=turn)
 
                 print('Step %d: error = %g, learning rate = %g' % (turn, curr_err, curr_lr))
@@ -63,4 +64,4 @@ class PrlSVD:
 
 if __name__ == '__main__':
     model = PrlSVD(item_size=7649, user_size=2000, hidden_size=256, time_step=12)
-    model.train(start_learning_rate=0.1, decay_rate=0.001, training_steps=1000)
+    model.train(start_learning_rate=0.1, decay_rate=0.002, training_steps=1000)

@@ -12,8 +12,8 @@ class LstmWithSvd:
         self.hidden_unit = hidden_unit
         self.batch_size = batch_size
 
-        self.x = tf.placeholder(tf.float32, shape=[batch_size, time_step, input_size])
-        self.y = tf.placeholder(tf.float32, shape=[batch_size, time_step, output_size])
+        self.x = tf.placeholder(tf.float32, shape=[batch_size, time_step, input_size], name='input_data')
+        self.y = tf.placeholder(tf.float32, shape=[batch_size, time_step, output_size], name='train_data')
 
         with tf.name_scope('input_mapping'):
             map_mtx = tf.Variable(tf.constant(0.0, shape=[map_size, input_size]), trainable=False)
@@ -64,7 +64,7 @@ class LstmWithSvd:
             error = tf.reduce_mean(tf.abs(self.prd - self.y))
             tf.summary.scalar('error', error)
             # Dynamic learning rate
-            global_step = tf.placeholder(tf.int16)
+            global_step = tf.placeholder(tf.int16, name='global_step')
             learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, training_steps, decay_rate)
             tf.summary.scalar('learning_rate', learning_rate)
             update_op = tf.train.AdamOptimizer(learning_rate).minimize(error)
@@ -75,7 +75,7 @@ class LstmWithSvd:
         with tf.Session(config=config) as sess:
             # Merge summaries
             merged = tf.summary.merge_all()
-            summary_writer = tf.summary.FileWriter('saved_models/LSTMwithSVD_%d/log' % self.hidden_unit, sess.graph)
+            summary_writer = tf.summary.FileWriter('saved_models/LSTM_with_SVD_%d/log' % self.hidden_unit, sess.graph)
 
             # Initialize global variables
             sess.run(tf.global_variables_initializer())
@@ -107,12 +107,12 @@ class LstmWithSvd:
                         self.y: train_y[start % data_len:] + train_y[:end % data_len],
                         global_step: curr_step
                     }
-                    _, curr_err, curr_lr = sess.run([update_op, error, learning_rate], feed_dict=feed_dict)
+                    _, curr_err, curr_lr, summary = sess.run([update_op, error, learning_rate, merged],
+                                                             feed_dict=feed_dict)
                     err_sum += curr_err
                     turns += 1
 
                     # Write summaries
-                    summary = sess.run(merged, feed_dict=feed_dict)
                     summary_writer.add_summary(summary, global_step=curr_step)
 
                     print('Step %d: error = %g, learning rate = %g' % (curr_step, err_sum / turns, curr_lr))
@@ -121,10 +121,12 @@ class LstmWithSvd:
 
             # Save model
             saver = tf.train.Saver()
-            saver.save(sess, 'saved_models/LSTMwithSVD_%d/model' % self.hidden_unit, global_step=training_steps)
+            saver.save(sess, 'saved_models/LSTM_with_SVD_%d/model' % self.hidden_unit, global_step=training_steps)
 
     def evaluate(self, user_limit):
-        test_x, test_y, known = DataSet(user_limit, self.time_step).lstm_test()
+        dataset = DataSet(user_limit, self.time_step)
+        test_x = dataset.lstm_test()
+        test_y, known = dataset.correct_data()
 
         hits = 0
         crrs = 0
@@ -132,7 +134,7 @@ class LstmWithSvd:
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         with tf.Session(config=config) as sess:
-            module_file = tf.train.latest_checkpoint('saved_models/LSTMwithSVD_%d/' % self.hidden_unit)
+            module_file = tf.train.latest_checkpoint('saved_models/LSTM_with_SVD_%d/' % self.hidden_unit)
             saver = tf.train.Saver()
             saver.restore(sess, module_file)
 
@@ -141,7 +143,7 @@ class LstmWithSvd:
 
                 priority = [[i, p] for p, i in enumerate(next_[0][-1])]
                 priority.sort(reverse=True)
-                priority = list(map(list, zip(*priority)))[1]
+                priority = list(zip(*priority))[1]
 
                 rec = [g for g in priority if g not in known[i]][:50]
                 crr = [h for h in test_y[i] if h not in known[i]]
@@ -156,7 +158,7 @@ class LstmWithSvd:
 
 if __name__ == '__main__':
     try:
-        model = LstmWithSvd(input_size=7649, map_size=256, hidden_unit=128, output_size=7649, time_step=8,
+        model = LstmWithSvd(input_size=7649, map_size=256, hidden_unit=256, output_size=7649, time_step=8,
                             batch_size=128)
         model.train(user_limit=2000, start_learning_rate=0.001, training_steps=1000, decay_rate=0.05)
 
