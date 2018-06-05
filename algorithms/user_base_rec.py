@@ -1,12 +1,12 @@
-from collections import Counter
 from dbconnector import GetCursor
 from dataset import DataSet
+from dbwriter import DbWriter
 import time
 
 cor, _ = DataSet(1000).correct_data()
 
 with GetCursor() as cur:
-    with open('../sqls/evaluate_template.sql', 'r', encoding='utf8') as f:
+    with open('evaluate_template.sql', 'r', encoding='utf8') as f:
         query_tmp = f.read()
 
     query = 'SELECT userid, COUNT(*) AS num FROM raw_train_data GROUP BY userid ORDER BY num DESC LIMIT 1000'
@@ -31,10 +31,5 @@ with GetCursor() as cur:
     end = time.time()
     print(end - start)
 
-    data = Counter(rec_games).items()
-    query = 'INSERT INTO game_count_cf_rec (gameid, cnt) VALUES (%s, %s)'
-    cur.executemany(query, data)
-
-    data = Counter(hit_games).items()
-    query = 'INSERT INTO game_count_cf_hit (gameid, cnt) VALUES (%s, %s)'
-    cur.executemany(query, data)
+    DbWriter.write(rec_games, 'game_count_cf_rec')
+    DbWriter.write(hit_games, 'game_count_cf_hit')

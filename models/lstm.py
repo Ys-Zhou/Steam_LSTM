@@ -1,5 +1,7 @@
 import tensorflow as tf
 from dataset import DataSet
+from dbwriter import DbWriter
+import time
 import os
 
 
@@ -125,6 +127,11 @@ class Lstm:
         hits = 0
         crrs = 0
 
+        rec_games = []
+        hit_games = []
+
+        start = time.time()
+
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         with tf.Session(config=config) as sess:
@@ -141,11 +148,21 @@ class Lstm:
 
                 rec = [g for g in priority if g not in known[i]][:50]
                 crr = [h for h in test_y[i] if h not in known[i]]
+                hit = list(set(rec).intersection(set(crr)))
 
-                hits += len(set(rec).intersection(set(crr)))
+                hit_games += hit
+                rec_games += rec
+
+                hits += len(hit)
                 crrs += len(crr)
 
                 print('[hits, corrs] : [%d, %d]' % (hits, crrs))
+
+        end = time.time()
+        print(end - start)
+
+        DbWriter.write(hit_games, 'game_count_lstm_hit')
+        DbWriter.write(rec_games, 'game_count_lstm_rec')
 
         print('recall = %g' % (hits / crrs))
 
