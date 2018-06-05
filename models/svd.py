@@ -58,7 +58,8 @@ class SVD:
             saver.save(sess, 'saved_models/SVD_%d/model' % self.hidden_size, global_step=training_steps)
 
     def evaluate(self):
-        test_y, known = DataSet(self.user_size).correct_data()
+        dataset = DataSet(self.user_size)
+        test_y, known = dataset.correct_data()
 
         hits = 0
         crrs = 0
@@ -73,7 +74,7 @@ class SVD:
             prd = sess.run(self.output)
 
             for user in range(len(prd)):
-                priority = [[i, p] for p, i in enumerate(prd[user])]
+                priority = list(zip(prd[user], dataset.game_tpl))
                 priority.sort(reverse=True)
                 priority = list(zip(*priority))[1]
 

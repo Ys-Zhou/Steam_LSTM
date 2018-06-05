@@ -8,8 +8,10 @@ class DataSet:
             # Get game list
             query = 'SELECT DISTINCT gameid FROM ts_train_data ORDER BY gameid'
             cur.execute(query)
-            self.__game_dict = dict((k[0], v) for v, k in enumerate(cur))
-            self.__game_count = len(self.__game_dict)
+            self.game_tpl = list(zip(*cur.fetchall()))[0]
+
+            self.__game_dict = dict((k, v) for v, k in enumerate(self.game_tpl))
+            self.__game_count = len(self.game_tpl)
 
             # Get user list
             query = 'SELECT userid, COUNT(*) AS num FROM raw_train_data GROUP BY userid ORDER BY num DESC LIMIT %d' \
@@ -78,10 +80,8 @@ class DataSet:
 
         return test_x
 
-    # return: shape=[user_size, ?], shape 0 contains game index
+    # return: shape=[user_size, ?], shape 0 contains gameid
     def correct_data(self):
-        self.__require_usm()
-
         test_y = []
         known = []
 
@@ -92,11 +92,12 @@ class DataSet:
                 cur.execute(query)
                 for row in cur:
                     if row[0] in self.__game_dict:
-                        test_list.append(self.__game_dict[row[0]])
+                        test_list.append(row[0])
                 test_y.append(test_list)
 
-                sparse_matrix = self.__user_sparse_matrix[user]
-                known.append(sparse_matrix[1])
+                query = 'SELECT gameid FROM ts_train_data WHERE userid = \'%s\'' % user
+                cur.execute(query)
+                known.append(list(zip(*cur.fetchall()))[0])
 
         return test_y, known
 

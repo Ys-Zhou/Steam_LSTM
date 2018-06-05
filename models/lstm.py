@@ -135,7 +135,7 @@ class Lstm:
             for i in range(len(test_x)):
                 next_ = sess.run(self.prd, feed_dict={self.x: [test_x[i]]})
 
-                priority = [[i, p] for p, i in enumerate(next_[0][-1])]
+                priority = list(zip(next_[0][-1], dataset.game_tpl))
                 priority.sort(reverse=True)
                 priority = list(zip(*priority))[1]
 

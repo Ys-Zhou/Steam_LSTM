@@ -3,4 +3,4 @@ CREATE TABLE global_train_data (
   gameid VARCHAR(6),
   rating DOUBLE NOT NULL,
   PRIMARY KEY (userid, gameid)
-)
+);
