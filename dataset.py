@@ -47,7 +47,7 @@ class DataSet:
 
     # Prepare training data for lstm
     # return: shape=[?, time_step, item_size]
-    def lstm_train(self):
+    def lstm_train(self) -> (list, list):
         self.__require_usm()
 
         train_x = []
@@ -66,7 +66,7 @@ class DataSet:
 
     # Prepare testing data for lstm
     # return: shape=[user_size, time_step, item_size]
-    def lstm_test(self):
+    def lstm_test(self) -> list:
         self.__require_usm()
 
         test_x = []
@@ -81,7 +81,7 @@ class DataSet:
         return test_x
 
     # return: shape=[user_size, ?], shape 0 contains gameid
-    def correct_data(self):
+    def correct_data(self) -> (list, list):
         test_y = []
         known = []
 
@@ -102,7 +102,7 @@ class DataSet:
         return test_y, known
 
     # return: shape=[user_size, ts_count, item_size]
-    def all_data(self):
+    def all_data(self) -> (list, list):
         self.__require_usm()
 
         data = []
@@ -120,7 +120,7 @@ class DataSet:
         return data, sign
 
     # return: shape=[user_size, item_size]
-    def global_data(self):
+    def global_data(self) -> (list, list):
         data = []
         sign = []
 

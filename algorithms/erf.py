@@ -1,11 +1,11 @@
 from dbconnector import GetCursor
 
 
-def listadd(a: list, b: list):
+def listadd(a: list, b: list) -> list:
     return [x + y for x, y in zip(a, b)]
 
 
-def listpro(a: list, pro: float):
+def listpro(a: list, pro: float) -> list:
     return [x * pro for x in a]
 
 
