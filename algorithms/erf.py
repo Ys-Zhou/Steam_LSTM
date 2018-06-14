@@ -5,8 +5,8 @@ def listadd(a: list, b: list) -> list:
     return [x + y for x, y in zip(a, b)]
 
 
-def listpro(a: list, pro: float) -> list:
-    return [x * pro for x in a]
+def listpro(a: list, p: float) -> list:
+    return [x * p for x in a]
 
 
 # Equal Ratio Filling
