@@ -38,6 +38,10 @@ class Lstm:
             # output_rnn: results in each step
             # last_states: final states
             output_rnn, last_states = tf.nn.dynamic_rnn(cell, input_rnn, initial_state=init_state, dtype=tf.float32)
+            # summary
+            kernel_vals, bias_vals = cell.variables
+            tf.summary.histogram('kernel', kernel_vals)
+            tf.summary.histogram('bias', bias_vals)
         with tf.name_scope('output_layer'):
             with tf.name_scope('weights'):
                 w_out = tf.Variable(tf.random_normal([hidden_unit, output_size]))
@@ -169,11 +173,11 @@ class Lstm:
 
 if __name__ == '__main__':
     try:
-        # model = Lstm(input_size=7649, hidden_unit=256, output_size=7649, time_step=8, batch_size=128)
-        # model.train(user_limit=2000, start_learning_rate=0.01, training_steps=1000, decay_rate=0.005)
+        model = Lstm(input_size=7649, hidden_unit=256, output_size=7649, time_step=8, batch_size=128)
+        model.train(user_limit=2000, start_learning_rate=0.01, training_steps=1000, decay_rate=0.005)
 
-        model = Lstm(input_size=7649, hidden_unit=256, output_size=7649, time_step=8)
-        model.evaluate(user_limit=2000)
+        # model = Lstm(input_size=7649, hidden_unit=256, output_size=7649, time_step=8)
+        # model.evaluate(user_limit=2000)
     finally:
         # os.system('shutdown /s /t 60')
         pass

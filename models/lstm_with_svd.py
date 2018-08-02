@@ -39,6 +39,10 @@ class LstmWithSvd:
             # output_rnn: results in each step
             # last_states: final states
             output_rnn, last_states = tf.nn.dynamic_rnn(cell, input_rnn, initial_state=init_state, dtype=tf.float32)
+            # summary
+            kernel_vals, bias_vals = cell.variables
+            tf.summary.histogram('kernel', kernel_vals)
+            tf.summary.histogram('bias', bias_vals)
         with tf.name_scope('output_layer'):
             with tf.name_scope('weights'):
                 w_out = tf.Variable(tf.random_normal([hidden_unit, map_size]))
