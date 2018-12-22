@@ -164,9 +164,10 @@ if __name__ == '__main__':
     try:
         model = LstmWithSvd(input_size=7649, map_size=256, hidden_unit=256, output_size=7649, time_step=8,
                             batch_size=128)
-        model.train(user_limit=2000, start_learning_rate=0.001, training_steps=1000, decay_rate=0.05)
+        model.train(user_limit=2000, start_learning_rate=0.001, training_steps=200, decay_rate=0.01)
 
         # model = LstmWithSvd(input_size=7649, hidden_unit=256, output_size=7649, time_step=8)
         # model.evaluate(user_limit=2000)
     finally:
-        os.system('shutdown /s /t 60')
+        # os.system('shutdown /s /t 60')
+        pass

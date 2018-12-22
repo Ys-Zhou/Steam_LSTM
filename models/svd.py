@@ -109,5 +109,4 @@ class SVD:
 if __name__ == '__main__':
     model = SVD(item_size=7649, user_size=2000, hidden_size=256)
     # model.train(start_learning_rate=0.05, decay_rate=0.002, training_steps=1000)
-
-    model.evaluate()
+    # model.evaluate()
