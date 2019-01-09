@@ -7,7 +7,9 @@ import os
 
 class Lstm:
 
-    def __init__(self, input_size: int, hidden_unit: int, output_size: int, time_step: int, batch_size: int = 1):
+    def __init__(self, model_name: str, input_size: int, hidden_unit: int, output_size: int, time_step: int,
+                 batch_size: int):
+        self.model_name = model_name
         self.time_step = time_step
         self.hidden_unit = hidden_unit
         self.batch_size = batch_size
@@ -54,9 +56,9 @@ class Lstm:
                 output_rnn = tf.reshape(output_rnn, [-1, hidden_unit])
                 # (b* s, h) => (b* s, o)
                 output_ = output_rnn @ w_out + b_out
-        with tf.name_scope('softmax'):
-            prd = tf.nn.softmax(output_)
-            # (b * s, out) => (b, s, out)
+            with tf.name_scope('softmax'):
+                prd = tf.nn.softmax(output_)
+                # (b * s, out) => (b, s, out)
             self.prd = tf.reshape(prd, [-1, time_step, output_size])
 
     def train(self, user_limit, start_learning_rate, training_steps, decay_rate):
@@ -79,7 +81,8 @@ class Lstm:
         with tf.Session(config=config) as sess:
             # Merge summaries
             merged = tf.summary.merge_all()
-            summary_writer = tf.summary.FileWriter('saved_models/LSTM_%d/log' % self.hidden_unit, sess.graph)
+            summary_writer = tf.summary.FileWriter('saved_models/%s_%d/' % (self.model_name, self.hidden_unit),
+                                                   sess.graph)
 
             # initialize
             sess.run(tf.global_variables_initializer())
@@ -121,7 +124,7 @@ class Lstm:
 
             # Save model
             saver = tf.train.Saver()
-            saver.save(sess, 'saved_models/LSTM_%d/model' % self.hidden_unit, global_step=training_steps)
+            saver.save(sess, 'saved_models/%s_%d/' % (self.model_name, self.hidden_unit), global_step=training_steps)
 
     def evaluate(self, user_limit):
         dataset = DataSet(user_limit, self.time_step)
@@ -139,7 +142,7 @@ class Lstm:
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         with tf.Session(config=config) as sess:
-            module_file = tf.train.latest_checkpoint('saved_models/LSTM_%d/' % self.hidden_unit)
+            module_file = tf.train.latest_checkpoint('saved_models/%s_%d/' % (self.model_name, self.hidden_unit))
             saver = tf.train.Saver()
             saver.restore(sess, module_file)
 
@@ -173,7 +176,7 @@ class Lstm:
 
 if __name__ == '__main__':
     try:
-        model = Lstm(input_size=7649, hidden_unit=256, output_size=7649, time_step=8, batch_size=128)
+        model = Lstm(model_name='LSTM', input_size=7649, hidden_unit=256, output_size=7649, time_step=8, batch_size=128)
         model.train(user_limit=2000, start_learning_rate=0.001, training_steps=200, decay_rate=0.01)
 
         # model = Lstm(input_size=7649, hidden_unit=256, output_size=7649, time_step=8)

@@ -5,8 +5,9 @@ import os
 
 class LstmWithSvd:
 
-    def __init__(self, input_size: int, map_size: int, hidden_unit: int, output_size: int, time_step: int,
-                 batch_size: int = 1):
+    def __init__(self, model_name: str, input_size: int, map_size: int, hidden_unit: int, output_size: int,
+                 time_step: int, batch_size: int):
+        self.model_name = model_name
         self.map_size = map_size
         self.time_step = time_step
         self.hidden_unit = hidden_unit
@@ -79,7 +80,8 @@ class LstmWithSvd:
         with tf.Session(config=config) as sess:
             # Merge summaries
             merged = tf.summary.merge_all()
-            summary_writer = tf.summary.FileWriter('saved_models/LSTM_with_SVD_%d/log' % self.hidden_unit, sess.graph)
+            summary_writer = tf.summary.FileWriter('saved_models/%s_%d/' % (self.model_name, self.hidden_unit),
+                                                   sess.graph)
 
             # Initialize global variables
             sess.run(tf.global_variables_initializer())
@@ -125,7 +127,7 @@ class LstmWithSvd:
 
             # Save model
             saver = tf.train.Saver()
-            saver.save(sess, 'saved_models/LSTM_with_SVD_%d/model' % self.hidden_unit, global_step=training_steps)
+            saver.save(sess, 'saved_models/%s_%d/' % (self.model_name, self.hidden_unit), global_step=training_steps)
 
     def evaluate(self, user_limit):
         dataset = DataSet(user_limit, self.time_step)
@@ -138,7 +140,7 @@ class LstmWithSvd:
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         with tf.Session(config=config) as sess:
-            module_file = tf.train.latest_checkpoint('saved_models/LSTM_with_SVD_%d/' % self.hidden_unit)
+            module_file = tf.train.latest_checkpoint('saved_models/%s_%d/' % (self.model_name, self.hidden_unit))
             saver = tf.train.Saver()
             saver.restore(sess, module_file)
 
@@ -162,9 +164,9 @@ class LstmWithSvd:
 
 if __name__ == '__main__':
     try:
-        model = LstmWithSvd(input_size=7649, map_size=256, hidden_unit=256, output_size=7649, time_step=8,
-                            batch_size=128)
-        model.train(user_limit=2000, start_learning_rate=0.001, training_steps=200, decay_rate=0.01)
+        model = LstmWithSvd(model_name='LSTM_with_SVD', input_size=7649, map_size=256, hidden_unit=256,
+                            output_size=7649, time_step=8, batch_size=128)
+        model.train(user_limit=2000, start_learning_rate=0.001, training_steps=100, decay_rate=0.1)
 
         # model = LstmWithSvd(input_size=7649, hidden_unit=256, output_size=7649, time_step=8)
         # model.evaluate(user_limit=2000)
