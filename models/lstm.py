@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.python.client import timeline
 from dataset import DataSet
 from dbwriter import DbWriter
 import time
@@ -75,6 +76,10 @@ class Lstm:
             tf.summary.scalar('learning_rate', learning_rate)
             update_op = tf.train.AdamOptimizer(learning_rate).minimize(error)
 
+        # Tracing
+        run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+        run_metadata = tf.RunMetadata()
+
         # Run session
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
@@ -101,7 +106,9 @@ class Lstm:
                         self.y: train_y[start % data_len:end % data_len],
                         global_step: curr_step
                     }
-                    _, curr_err, _ = sess.run([update_op, error, learning_rate], feed_dict=feed_dict)
+                    _, curr_err, _ = sess.run([update_op, error, learning_rate], feed_dict=feed_dict,
+                                              options=run_options,
+                                              run_metadata=run_metadata)
                     err_sum += curr_err
                     turns += 1
                 else:
@@ -111,7 +118,8 @@ class Lstm:
                         global_step: curr_step
                     }
                     _, curr_err, curr_lr, summary = sess.run([update_op, error, learning_rate, merged],
-                                                             feed_dict=feed_dict)
+                                                             feed_dict=feed_dict, options=run_options,
+                                                             run_metadata=run_metadata)
                     err_sum += curr_err
                     turns += 1
 
@@ -125,6 +133,12 @@ class Lstm:
             # Save model
             saver = tf.train.Saver()
             saver.save(sess, 'saved_models/%s_%d/' % (self.model_name, self.hidden_unit), global_step=training_steps)
+
+            # Save tracing
+            tl = timeline.Timeline(run_metadata.step_stats)
+            ctf = tl.generate_chrome_trace_format()
+            with open('saved_models/%s_%d/timeline.json' % (self.model_name, self.hidden_unit), 'w') as f:
+                f.write(ctf)
 
     def evaluate(self, user_limit):
         dataset = DataSet(user_limit, self.time_step)
@@ -176,8 +190,8 @@ class Lstm:
 
 if __name__ == '__main__':
     try:
-        model = Lstm(model_name='LSTM', input_size=7649, hidden_unit=256, output_size=7649, time_step=8, batch_size=128)
-        model.train(user_limit=2000, start_learning_rate=0.001, training_steps=200, decay_rate=0.01)
+        model = Lstm(model_name='LSTM', input_size=7649, hidden_unit=64, output_size=7649, time_step=8, batch_size=128)
+        model.train(user_limit=2000, start_learning_rate=0.001, training_steps=100, decay_rate=0.01)
 
         # model = Lstm(input_size=7649, hidden_unit=256, output_size=7649, time_step=8)
         # model.evaluate(user_limit=2000)
